@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in — Referral Portal</title>
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="loginwrap">
+  <form class="loginbox" id="loginForm">
+    <div class="brand"><span class="mark">R</span> Referral Portal</div>
+    <p class="sub">Sign in with the account your office administrator gave you.</p>
+
+    <div class="err hide" id="err"></div>
+
+    <div class="fld">
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" autocapitalize="none" required>
+    </div>
+    <div class="fld">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn" type="submit" id="submitBtn">Sign in</button>
+
+    <div class="privacy">
+      This system contains protected health information. Access is logged.
+      Do not share your login with anyone.
+    </div>
+  </form>
+</div>
+<script src="/js/login.js"></script>
+</body>
+</html>

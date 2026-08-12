@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Referral Portal</title>
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <a class="logo" href="/" style="text-decoration:none;color:inherit"><div class="mark">R</div> Referral Portal</a>
+    <nav class="nav">
+      <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12l8-8 8 8"/><path d="M6 10v10h12V10"/></svg> Back to portal</a>
+    </nav>
+    <div class="userbox">
+      <div class="nm" id="userName">…<small>Administrator</small></div>
+      <button class="linkbtn" data-act="logout">Sign out</button>
+    </div>
+  </div>
+
+  <main class="main">
+    <div class="main-head">
+      <div>
+        <h1>Admin</h1>
+        <div class="sub">Manage your lists, directories and staff logins. Changes take effect right away — no developer needed.</div>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+    <div id="panel"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg><span id="toastMsg"></span></div>
+<div id="modalHost"></div>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>

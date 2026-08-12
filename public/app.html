@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Referral Portal</title>
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="logo" data-act="go" data-view="dash"><div class="mark">R</div> Referral Portal</div>
+    <nav class="nav">
+      <a id="navDash" class="active" data-act="go" data-view="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> Dashboard</a>
+      <a id="navRef" data-act="go" data-view="list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="8" r="2.6"/><path d="M16 14.2a5 5 0 0 1 4.5 5.8"/></svg> Referrals</a>
+      <a id="navAdmin" class="hide" href="/admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg> Admin</a>
+    </nav>
+    <div class="userbox">
+      <div class="nm" id="userName">…<small id="userRole"></small></div>
+      <div class="avatar" id="userAvatar">…</div>
+      <button class="linkbtn" data-act="logout">Sign out</button>
+    </div>
+  </div>
+
+  <main class="main hide" id="dashView"></main>
+
+  <main class="main hide" id="listView">
+    <div class="main-head">
+      <div>
+        <h1>Referral Log</h1>
+        <div class="sub" id="listSub">All incoming referrals</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn hide" id="newBtn2" data-act="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> New Referral</button>
+      </div>
+    </div>
+    <div class="toolbar">
+      <span id="chips" style="display:contents"></span>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="q" placeholder="Search name / phone / ID…"></div>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Patient Name</th><th>DOB</th><th>Order Date</th><th>Phone</th><th>Payer</th><th>Doctor</th><th>Lawyer</th><th>LOP</th><th>Status</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty hide" id="emptyMsg">No referrals in this view.</div>
+    </div>
+  </main>
+
+  <main class="main hide" id="formView"></main>
+</div>
+
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg><span id="toastMsg"></span></div>
+<div id="modalHost"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
