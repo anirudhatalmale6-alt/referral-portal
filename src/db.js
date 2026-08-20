@@ -132,4 +132,27 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_log(created_at);
 `);
 
+/**
+ * Migrations. Columns added after the first release go here rather than in the
+ * CREATE TABLE above, so an existing database picks them up on the next restart
+ * without anyone having to touch the data.
+ */
+function addColumn(table, column, decl) {
+  const has = db.prepare(`PRAGMA table_info(${table})`).all().some(c => c.name === column);
+  if (!has) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+}
+
+// The practice's existing directories carry a fax number and free-text notes
+// ("if the patient went to ER only 1 ESI is approved"), which the authorisation
+// desk reads before calling. Both are worth keeping.
+["attorneys", "referring_doctors"].forEach(t => {
+  addColumn(t, "fax", "TEXT");
+  addColumn(t, "notes", "TEXT");
+});
+
+db.exec(`
+CREATE INDEX IF NOT EXISTS idx_attorneys_name ON attorneys(name);
+CREATE INDEX IF NOT EXISTS idx_doctors_name ON referring_doctors(name);
+`);
+
 module.exports = db;

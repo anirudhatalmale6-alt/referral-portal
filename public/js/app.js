@@ -84,9 +84,6 @@ async function api(path, opts) {
 function opt(arr, val) {
   return arr.map(o => `<option value="${esc(o)}" ${o === val ? "selected" : ""}>${esc(o)}</option>`).join("");
 }
-function optId(arr, val) {
-  return arr.map(o => `<option value="${o.id}" ${String(o.id) === String(val) ? "selected" : ""}>${esc(o.name)}</option>`).join("");
-}
 function examOptions(val) {
   return (BOOT.examGroups || []).map(([label, items]) =>
     `<optgroup label="${esc(label)}">` +
@@ -254,6 +251,69 @@ function field(label, key, val, req) {
     <input data-k="${key}" value="${esc(val || "")}" ${ro}></div>`;
 }
 
+/* ------------------------------------------------- attorney / doctor lookup */
+
+/**
+ * The practice's directories run to 800+ lawyers and 550+ referring doctors.
+ * A plain dropdown that long is unusable at a front desk, so these are
+ * type-to-search boxes instead: start typing any part of the name and the
+ * browser narrows the list.
+ *
+ * The visible box holds the NAME because that is what staff know. The hidden
+ * input beside it holds the id, and that is what gets saved — so a typo can
+ * never quietly attach the wrong lawyer to a patient.
+ */
+function lookupField(label, key, list, val, listId) {
+  const ro = BOOT.perms.write ? "" : "disabled";
+  const chosen = list.find(o => String(o.id) === String(val));
+  return `<div class="fld lookup" data-for="${esc(key)}">
+    <label>${esc(label)}</label>
+    <input data-lookup="${esc(key)}" list="${esc(listId)}" autocomplete="off"
+           placeholder="Type to search ${list.length} ${label.toLowerCase()}s…"
+           value="${esc(chosen ? chosen.name : "")}" ${ro}>
+    <input type="hidden" data-k="${esc(key)}" value="${esc(chosen ? chosen.id : "")}">
+    <div class="lookup-hint">${chosen ? contactLine(chosen) : ""}</div>
+  </div>`;
+}
+
+/** The one line the authorisation desk actually needs: how to reach them. */
+function contactLine(o) {
+  const bits = [];
+  if (o.phone) bits.push(`Ph ${esc(o.phone)}`);
+  if (o.fax) bits.push(`Fax ${esc(o.fax)}`);
+  if (o.email) bits.push(esc(o.email));
+  let html = bits.length ? `<span class="lk-contact">${bits.join(" &middot; ")}</span>` : "";
+  // Their sheets carry standing instructions per firm — "if the patient went to
+  // ER only 1 ESI is approved". Surfacing it here saves opening the directory.
+  if (o.notes) html += `<span class="lk-note">${esc(o.notes)}</span>`;
+  return html;
+}
+
+function datalists() {
+  const build = (id, arr) => `<datalist id="${id}">` +
+    arr.map(o => `<option value="${esc(o.name)}"></option>`).join("") + `</datalist>`;
+  return build("dl_attorneys", BOOT.attorneys) + build("dl_doctors", BOOT.doctors);
+}
+
+/** Resolves what was typed back to a directory entry and stores its id. */
+function resolveLookup(input) {
+  const key = input.getAttribute("data-lookup");
+  const list = key === "attorney_id" ? BOOT.attorneys : BOOT.doctors;
+  const wrap = input.closest(".lookup");
+  const hidden = wrap.querySelector("[data-k]");
+  const hint = wrap.querySelector(".lookup-hint");
+  const typed = input.value.trim().toLowerCase();
+
+  const match = typed ? list.find(o => o.name.toLowerCase() === typed) : null;
+  hidden.value = match ? match.id : "";
+  hint.innerHTML = match ? contactLine(match) : "";
+
+  // Text with no match is flagged rather than silently dropped, so nobody
+  // saves a referral believing they picked a lawyer when they did not.
+  wrap.classList.toggle("unmatched", !!typed && !match);
+  if (typed && !match) hint.innerHTML = `<span class="lk-warn">Not in the directory yet — pick from the list, or add them under Admin.</span>`;
+}
+
 function renderForm() {
   const p = editing;
   const isNew = !p.id;
@@ -307,12 +367,12 @@ function renderForm() {
       <div class="sec-h"><span class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v6H4zM4 14h16v6H4z"/></svg></span> Referral &amp; Payer</div>
       <div class="grid g4">
         <div class="fld"><label>Payer</label><select data-k="payer" ${dis}>${opt(BOOT.payers, p.payer)}</select></div>
-        <div class="fld"><label>Lawyer</label><select data-k="attorney_id" ${dis}><option value="">Select…</option>${optId(BOOT.attorneys, p.attorney_id)}</select></div>
+        ${lookupField("Lawyer", "attorney_id", BOOT.attorneys, p.attorney_id, "dl_attorneys")}
         ${field("Patient ID", "pid", p.pid)}
         ${field("Order Enter Date", "order_date", p.order_date)}
       </div>
       <div class="grid g4" style="margin-top:16px">
-        <div class="fld"><label>Referring Doctor</label><select data-k="doctor_id" ${dis}><option value="">Select…</option>${optId(BOOT.doctors, p.doctor_id)}</select></div>
+        ${lookupField("Referring Doctor", "doctor_id", BOOT.doctors, p.doctor_id, "dl_doctors")}
         <div class="fld"><label>LOP Status</label><select data-k="lop_status" ${canLop ? "" : "disabled"}>
           <option ${p.lop_status === "Pending" ? "selected" : ""}>Pending</option>
           <option ${p.lop_status === "Approved" ? "selected" : ""}>Approved</option></select></div>
@@ -341,7 +401,8 @@ function renderForm() {
     <div class="footbar">
       <button class="fbtn" data-act="go" data-view="list">Cancel</button>
       ${canWrite || canLop ? `<button class="fbtn pri" data-act="save">${isNew ? "Save Referral" : "Save Changes"}</button>` : ""}
-    </div>`;
+    </div>
+    ${datalists()}`;
 
   view = "form";
   document.getElementById("dashView").classList.add("hide");
@@ -530,7 +591,15 @@ document.addEventListener("input", e => {
     if (e.target.value.trim()) filter = "all";
     clearTimeout(searchTimer);
     searchTimer = setTimeout(loadList, 250);
+    return;
   }
+  // Picking from the datalist fires "input", not "change", so resolve here.
+  if (e.target.hasAttribute && e.target.hasAttribute("data-lookup")) resolveLookup(e.target);
+});
+
+// A datalist pick in some browsers only settles on blur; re-resolve then too.
+document.addEventListener("change", e => {
+  if (e.target.hasAttribute && e.target.hasAttribute("data-lookup")) resolveLookup(e.target);
 });
 
 /* ------------------------------------------------------------------ start */

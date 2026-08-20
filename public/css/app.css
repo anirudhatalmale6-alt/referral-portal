@@ -210,3 +210,44 @@
 .userbox .nm small{display:block;color:var(--muted);font-weight:500;font-size:11px}
 .linkbtn{background:none;border:none;color:var(--brand);font-weight:600;font-size:12.5px;cursor:pointer;padding:0}
 .tbl-actions{display:flex;gap:7px}
+
+/* --------------------------------------------- attorney / doctor lookup */
+/* Type-to-search boxes replacing dropdowns that would otherwise be 800 long. */
+.fld.lookup { position: relative; }
+.fld.lookup input[data-lookup] { width: 100%; }
+.fld.lookup.unmatched input[data-lookup] { border-color: #d97706; background: #fffbeb; }
+.lookup-hint { margin-top: 6px; font-size: 12px; line-height: 1.5; display: grid; gap: 3px; }
+.lookup-hint:empty { display: none; }
+.lk-contact { color: #64748b; }
+.lk-note {
+  color: #92400e; background: #fffbeb; border-left: 3px solid #f59e0b;
+  padding: 5px 8px; border-radius: 0 5px 5px 0;
+  /* Standing instructions can run long; keep the form from stretching. */
+  max-height: 84px; overflow-y: auto; white-space: pre-wrap;
+}
+.lk-warn { color: #b45309; }
+
+/* --------------------------------------------------- admin directory search */
+.dirsearch {
+  width: 100%; max-width: 380px; padding: 9px 12px; font-size: 14px;
+  border: 1px solid #dbe2ea; border-radius: 8px; background: #fff;
+}
+.dirsearch:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+.dirnote { font-size: 12.5px; color: #64748b; margin-top: 10px; }
+
+/* Directory tables carry long values — several comma-separated emails in one
+   cell, addresses, standing instructions. Left to size themselves they push
+   the Actions buttons off the right-hand edge, so each column is pinned and
+   anything over-long is truncated with the full text on hover. */
+.dirtable { table-layout: fixed; width: 100%; }
+.dirtable td, .dirtable th { vertical-align: top; }
+.dirtable .c-name  { width: 22%; }
+.dirtable .c-phone { width: 116px; white-space: nowrap; }
+.dirtable .c-fax   { width: 116px; white-space: nowrap; }
+.dirtable .c-email { width: 22%; }
+.dirtable .c-city  { width: 100px; }
+.dirtable .c-notes { width: auto; }
+.dirtable .c-act   { width: 150px; }
+.dirtable td.clip {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}

@@ -95,23 +95,68 @@ function renderSimple(panel) {
     <div class="muted" style="font-size:12.5px;margin-top:12px">Hiding removes an item from the dropdowns but keeps it readable on older patient records, so your history stays intact.</div>`;
 }
 
+/** How many directory rows to draw at once. The full list is 800+ entries. */
+const DIR_PAGE = 100;
+let dirQuery = "";
+
+function dirMatches() {
+  const q = dirQuery.trim().toLowerCase();
+  if (!q) return rows;
+  // Search every column staff might remember them by, not just the name.
+  return rows.filter(r => ["name", current.second, "phone", "fax", "email", "address", "city", "notes"]
+    .some(f => String(r[f] || "").toLowerCase().includes(q)));
+}
+
 function renderDir(panel) {
-  panel.innerHTML = addBar(`${rows.filter(r => r.active).length} active ${current.label.toLowerCase()}`) + `
-    <div class="tablewrap"><table><thead><tr>
-      <th>Name</th><th>${esc(current.secondLabel)}</th><th>Phone</th><th>Email</th><th>City</th><th style="width:170px">Actions</th>
-    </tr></thead><tbody>${rows.map(r => `
-      <tr class="${r.active ? "" : "inactive"}">
-        <td><b>${esc(r.name)}</b></td>
-        <td class="muted">${esc(r[current.second] || "—")}</td>
-        <td class="muted">${esc(r.phone || "—")}</td>
-        <td class="muted">${esc(r.email || "—")}</td>
-        <td class="muted">${esc(r.city || "—")}</td>
-        <td><div class="tbl-actions">
-          <button class="mini ghost" data-act="edit" data-id="${r.id}">Edit</button>
-          ${r.active ? `<button class="mini ghost" data-act="deact" data-id="${r.id}">Hide</button>`
-                     : `<button class="mini ghost" data-act="react" data-id="${r.id}">Restore</button>`}
-        </div></td>
-      </tr>`).join("")}</tbody></table></div>`;
+  const activeCount = rows.filter(r => r.active).length;
+  panel.innerHTML = `
+    <div class="main-head" style="margin-bottom:14px">
+      <div class="sub">${activeCount} active ${esc(current.label.toLowerCase())}</div>
+      <button class="btn" data-act="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> Add</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <input id="dirq" class="dirsearch" placeholder="Search by name, phone, fax, email or address…" value="${esc(dirQuery)}" autocomplete="off">
+    </div>
+    <div class="tablewrap"><table class="dirtable"><thead><tr>
+      <th class="c-name">Name</th><th class="c-phone">Phone</th><th class="c-fax">Fax</th>
+      <th class="c-email">Email</th><th class="c-city">City</th><th class="c-notes">Notes</th>
+      <th class="c-act">Actions</th>
+    </tr></thead><tbody id="dirBody"></tbody></table></div>
+    <div class="dirnote" id="dirNote"></div>`;
+  renderDirRows();
+}
+
+/**
+ * Redraws only the rows. The search box is deliberately outside what gets
+ * rebuilt — replacing an input mid-keystroke throws away focus and the caret,
+ * so a search that re-rendered everything would drop every character after
+ * the first.
+ */
+function renderDirRows() {
+  const body = document.getElementById("dirBody");
+  if (!body) return;
+  const all = dirMatches();
+  const shown = all.slice(0, DIR_PAGE);
+
+  body.innerHTML = shown.map(r => `
+    <tr class="${r.active ? "" : "inactive"}">
+      <td class="c-name" title="${esc(r.name)}"><b>${esc(r.name)}</b></td>
+      <td class="c-phone muted">${esc(r.phone || "—")}</td>
+      <td class="c-fax muted">${esc(r.fax || "—")}</td>
+      <td class="c-email muted clip" title="${esc(r.email || "")}">${esc(r.email || "—")}</td>
+      <td class="c-city muted">${esc(r.city || "—")}</td>
+      <td class="c-notes muted clip" title="${esc(r.notes || "")}">${esc(r.notes || "—")}</td>
+      <td class="c-act"><div class="tbl-actions">
+        <button class="mini ghost" data-act="edit" data-id="${r.id}">Edit</button>
+        ${r.active ? `<button class="mini ghost" data-act="deact" data-id="${r.id}">Hide</button>`
+                   : `<button class="mini ghost" data-act="react" data-id="${r.id}">Restore</button>`}
+      </div></td>
+    </tr>`).join("");
+
+  document.getElementById("dirNote").textContent =
+    all.length === 0 ? "Nothing matched that search."
+      : all.length > DIR_PAGE ? `Showing the first ${DIR_PAGE} of ${all.length} matches — type in the search box to narrow it down.`
+      : `Showing all ${all.length}${dirQuery ? " matches" : ""}.`;
 }
 
 function renderUsers(panel) {
@@ -199,11 +244,16 @@ function openEditor(id) {
       ${fld("Name", "f_name", r ? r.name : "")}
       ${fld(current.secondLabel, "f_second", r ? r[current.second] : "")}
       ${fld("Phone", "f_phone", r ? r.phone : "")}
+      ${fld("Fax", "f_fax", r ? r.fax : "")}
       ${fld("Email", "f_email", r ? r.email : "", "email")}
       ${fld("Address", "f_address", r ? r.address : "")}
       ${fld("City", "f_city", r ? r.city : "")}
       ${fld("State", "f_state", r ? r.state : "")}
       ${fld("Zip", "f_zip", r ? r.zip : "")}
+      <div class="fld"><label>Notes</label>
+        <textarea id="f_notes" rows="3" style="width:100%">${esc(r ? r.notes : "")}</textarea>
+        <div class="muted" style="font-size:12px;margin-top:4px">Standing instructions for this ${esc(current.noun)} — shown to staff on the patient form whenever they are selected.</div>
+      </div>
       ${foot()}`);
     return;
   }
@@ -253,8 +303,9 @@ async function submitModal() {
       if (current.extra === "category") body.category = v("f_category");
     } else if (t === "dir") {
       body = {
-        name: v("f_name"), phone: v("f_phone"), email: v("f_email"), address: v("f_address"),
-        city: v("f_city"), state: v("f_state"), zip: v("f_zip"),
+        name: v("f_name"), phone: v("f_phone"), fax: v("f_fax"), email: v("f_email"),
+        address: v("f_address"), city: v("f_city"), state: v("f_state"), zip: v("f_zip"),
+        notes: v("f_notes"),
       };
       body[current.second] = v("f_second");
     } else if (t === "users") {
@@ -281,6 +332,7 @@ document.addEventListener("click", async e => {
 
   if (act === "tab") {
     current = TABS.find(t => t.key === el.getAttribute("data-key"));
+    dirQuery = "";                       // a new tab starts from an unfiltered list
     renderTabs();
     load();
     return;
@@ -311,6 +363,14 @@ document.addEventListener("click", async e => {
   if (act === "logout") {
     api("/api/logout", { method: "POST" }).finally(() => { location.href = "/login"; });
   }
+});
+
+let dirTimer;
+document.addEventListener("input", e => {
+  if (e.target.id !== "dirq") return;
+  dirQuery = e.target.value;
+  clearTimeout(dirTimer);
+  dirTimer = setTimeout(renderDirRows, 120);
 });
 
 (async function start() {

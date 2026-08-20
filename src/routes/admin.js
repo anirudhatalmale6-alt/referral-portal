@@ -80,8 +80,8 @@ function defaultFor(key, field) {
 /* Directories: attorneys + referring doctors ------------------------------ */
 
 const DIR = {
-  attorneys: { table: "attorneys", fields: ["name", "firm", "phone", "email", "address", "city", "state", "zip"] },
-  doctors: { table: "referring_doctors", fields: ["name", "practice", "phone", "email", "address", "city", "state", "zip"] },
+  attorneys: { table: "attorneys", fields: ["name", "firm", "phone", "fax", "email", "address", "city", "state", "zip", "notes"] },
+  doctors: { table: "referring_doctors", fields: ["name", "practice", "phone", "fax", "email", "address", "city", "state", "zip", "notes"] },
 };
 
 Object.entries(DIR).forEach(([key, cfg]) => {

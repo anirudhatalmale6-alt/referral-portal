@@ -93,8 +93,15 @@ router.get("/bootstrap", (req, res) => {
     providers: db.prepare("SELECT name FROM providers WHERE active = 1 ORDER BY sort, id").all().map(r => r.name),
     statuses: db.prepare("SELECT name, kind FROM statuses WHERE active = 1 ORDER BY sort, id").all(),
     examGroups: grouped,
-    attorneys: db.prepare("SELECT id, name, firm FROM attorneys WHERE active = 1 ORDER BY name").all(),
-    doctors: db.prepare("SELECT id, name, practice FROM referring_doctors WHERE active = 1 ORDER BY name").all(),
+    // Contact details ride along so the patient form can show how to reach the
+    // firm, and any standing instruction the practice has recorded against it,
+    // without a second request every time someone picks one.
+    attorneys: db.prepare(
+      "SELECT id, name, firm, phone, fax, email, notes FROM attorneys WHERE active = 1 ORDER BY name"
+    ).all(),
+    doctors: db.prepare(
+      "SELECT id, name, practice, phone, fax, email, notes FROM referring_doctors WHERE active = 1 ORDER BY name"
+    ).all(),
     payers: ["LOP", "Insurance", "Self Pay"],
   });
 });

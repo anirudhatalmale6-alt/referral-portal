@@ -37,6 +37,13 @@ the practice works today.
 approved two injections"), plus every text message sent to the patient logged
 automatically, so the whole history of contact sits in one place.
 
+**Directories** — the practice's attorney and referring-doctor lists, searchable
+by name, phone, fax, email or address. On the patient form these are
+type-to-search boxes rather than dropdowns, because the real lists run to
+hundreds of entries. Picking one shows its phone, fax and email, plus any
+standing instruction recorded against it — "if the patient went to ER only 1 ESI
+is approved" — right where the authorisation desk needs it.
+
 **Admin** — the practice manages its own facilities, providers, exams, statuses,
 attorney and referring-doctor directories, and staff logins. Nothing on that
 screen needs a developer.
@@ -72,6 +79,35 @@ choose your own password the first time you sign in.
 
 To point it at a different database folder or port, copy `.env.example` to `.env`
 and edit it.
+
+---
+
+## Importing the attorney and referring-doctor directories
+
+The practice keeps these lists in a spreadsheet. To load or refresh them:
+
+1. In Google Sheets, **File → Download → Comma-separated values (.csv)**.
+2. Run:
+
+```bash
+node src/import-directories.js attorneys /path/to/lawyers.csv
+node src/import-directories.js doctors   /path/to/doctors.csv
+```
+
+Columns are matched by their heading — Name (or "Lawyer Name" / "Doctor Name"),
+Fax, Phone, Email, Address, Notes — in any order, and the header does not have to
+be the first row.
+
+Safe to run as often as you like. Entries are matched on the name, so re-running
+an updated export refreshes the details on the ones already there and adds the
+new ones. **Nothing is ever deleted**, so a patient record that points at an
+attorney can never be orphaned by an import, and a blank cell in the spreadsheet
+never wipes a detail somebody typed into the portal.
+
+Addresses are split into street/city/state/zip where they can be read
+confidently; anything ambiguous is kept whole in the address field rather than
+guessed at. Any entry can be corrected by hand under **Admin → Attorneys /
+Referring Doctors**.
 
 ---
 
