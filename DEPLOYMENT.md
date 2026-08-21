@@ -12,13 +12,41 @@ whatever server it runs on:
 
 1. **The hosting company signs a Business Associate Agreement (BAA) with the
    practice.** Without it the practice is out of compliance no matter how good
-   the software is. DigitalOcean, AWS, Azure and Google Cloud all sign one on
-   request. Most cheap shared hosting will not.
+   the software is. Most cheap shared hosting will not sign one at all.
 2. **The account is in the practice's name**, paid on the practice's card. Not
    the developer's. You own the server, the domain and the data.
 
 A single small server is plenty for a practice of this size — roughly $12–24 a
 month. This is not a heavy application.
+
+### Getting the BAA signed
+
+The application runs on any Ubuntu server, so this is purely a paperwork
+question — pick whichever provider will actually sign. Checked August 2026;
+these terms change, so confirm before relying on them.
+
+**AWS** — the BAA is self-service. Sign in, open **AWS Artifact → Agreements**,
+accept the *AWS Business Associate Addendum* online. It takes minutes, costs
+nothing extra, and requires no support contract.
+
+> Trap: **Amazon Lightsail is not on the HIPAA-eligible services list** — it is
+> the obvious cheap choice and it is the wrong one. Use **EC2** (a `t4g.small`
+> with a 30 GB encrypted gp3 volume is ample, around $15/month). PHI must stay
+> on HIPAA-eligible services even though the BAA covers the whole account.
+
+**DigitalOcean** — the BAA is not self-service and is handled by their legal
+team, not the ordinary technical support queue. Their trust page directs *new*
+customers to **Sales**, and existing customers to **Support**; a ticket raised
+in the wrong queue tends to go unanswered. Third-party guidance also reports a
+**paid Standard support plan ($99/month) as a precondition for HIPAA
+workloads** — DigitalOcean's own HIPAA page does not state this, so ask them
+directly before budgeting. Covered products include Droplets, Volumes,
+Firewalls, Load Balancers, VPC, Backups and Snapshots.
+
+Azure and Google Cloud also sign, on processes closer to DigitalOcean's than to
+AWS's.
+
+Whichever is chosen, nothing below changes — it is the same Ubuntu install.
 
 ---
 
@@ -28,7 +56,7 @@ month. This is not a heavy application.
 # as root
 apt update && apt upgrade -y
 apt install -y nginx git ufw
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 apt install -y nodejs
 
 adduser --system --group --home /opt/referral-portal portal
@@ -211,7 +239,11 @@ Software side — already done:
 Practice side — these are yours, and the software cannot do them for you:
 
 - [ ] Signed BAA with the hosting company
-- [ ] Full-disk encryption on the server volume
+- [ ] Full-disk encryption on the server volume — **tick the encryption box when
+      the volume is created.** Turning it on afterwards means snapshotting,
+      re-creating and migrating; it is a minute's work up front and an
+      afternoon's later. (DigitalOcean encrypts Droplet storage at rest by
+      default; on AWS it is a checkbox on the EBS volume.)
 - [ ] Staff trained not to share logins
 - [ ] Logins revoked the day someone leaves (Admin → Staff Logins → Revoked)
 - [ ] Off-site encrypted backups, restore tested
