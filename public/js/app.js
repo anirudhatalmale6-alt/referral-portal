@@ -390,7 +390,11 @@ function renderForm() {
 
     <div class="cardbox">
       <div class="sec-h"><span class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v12H8l-4 4z"/></svg></span> Notes &amp; Communication Log</div>
-      ${isNew ? `<div class="muted" style="font-size:13px;padding:4px 2px 12px">Save this referral first, then notes can be added.</div>` : `
+      ${isNew ? `
+      ${canWrite || canLop ? `<div class="noteAdd">
+        <textarea id="noteInput" placeholder="Add a note about this patient — e.g. Attorney approved two injections…"></textarea>
+      </div>
+      <div class="muted" style="font-size:13px;padding:0 2px 4px">This note is saved along with the referral when you press Save Referral.</div>` : ""}` : `
       ${canWrite || canLop ? `<div class="noteAdd">
         <textarea id="noteInput" placeholder="Add a note about this patient — e.g. Attorney approved two injections…"></textarea>
         <button class="mini blue" style="height:44px" data-act="addnote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> Add Note</button>
@@ -444,9 +448,26 @@ async function saveForm() {
   }
   try {
     if (!editing.id) {
+      // A note typed while registering has nowhere to attach until the patient row
+      // exists, so it is held here and written immediately after the referral is
+      // created. Front desk can type the note and the referral in one go.
+      const pendingNote = String((document.getElementById("noteInput") || {}).value || "").trim();
       const r = await api("/api/patients", { method: "POST", body: JSON.stringify(editing) });
-      toast("Referral saved to the queue");
       editing.id = r.id;
+      if (pendingNote) {
+        try {
+          await api(`/api/patients/${r.id}/notes`, {
+            method: "POST", body: JSON.stringify({ body: pendingNote, kind: "note" }),
+          });
+          toast("Referral and note saved");
+        } catch (e) {
+          // The referral itself is safely saved; only the note failed. Say so
+          // plainly rather than letting it disappear silently.
+          toast("Referral saved, but the note did not — please re-add it");
+        }
+      } else {
+        toast("Referral saved to the queue");
+      }
     } else {
       await api(`/api/patients/${editing.id}`, { method: "PUT", body: JSON.stringify(editing) });
       toast("Changes saved");

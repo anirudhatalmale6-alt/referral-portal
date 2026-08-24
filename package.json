@@ -1,6 +1,6 @@
 {
   "name": "suncoast-referral-portal",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Referral tracking, scheduling and reporting portal",
   "main": "server.js",

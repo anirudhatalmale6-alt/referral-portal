@@ -1,6 +1,7 @@
 "use strict";
 require("dotenv").config();
 
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 const helmet = require("helmet");
@@ -16,8 +17,28 @@ const { attachUser, requirePage, requireApi, need } = require("./src/auth");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const PROD = process.env.NODE_ENV === "production";
+
+/**
+ * Stamps the app version into each HTML page, so the browser is asked for
+ * /js/app.js?v=1.1.0 rather than /js/app.js. Without this a staff member can
+ * keep running yesterday's JavaScript out of cache after an update and report
+ * a bug that was already fixed. Bump "version" in package.json on each release
+ * and every page picks it up — there is no second place to remember.
+ */
+const APP_VERSION = require("./package.json").version;
+const pageCache = new Map();
+function sendPage(res, file) {
+  let html = pageCache.get(file);
+  if (!html) {
+    html = fs.readFileSync(path.join(__dirname, "public", file), "utf8")
+      .replace(/__V__/g, APP_VERSION);
+    pageCache.set(file, html);
+  }
+  res.type("html").send(html);
+}
 
 // Behind nginx/Cloudflare we need the real client IP for the audit trail.
 app.set("trust proxy", 1);
@@ -73,7 +94,7 @@ const loginLimiter = rateLimit({
 
 app.get("/login", (req, res) => {
   if (req.user) return res.redirect("/");
-  res.sendFile(path.join(__dirname, "public", "login.html"));
+  sendPage(res, "login.html");
 });
 
 app.post("/api/login", loginLimiter, (req, res) => {
@@ -130,10 +151,10 @@ app.use("/api/admin", require("./src/routes/admin"));
 
 app.get("/admin", requirePage, (req, res) => {
   if (req.user.role !== "admin") return res.redirect("/");
-  res.sendFile(path.join(__dirname, "public", "admin.html"));
+  sendPage(res, "admin.html");
 });
 
-app.get("/", requirePage, (_req, res) => res.sendFile(path.join(__dirname, "public", "app.html")));
+app.get("/", requirePage, (_req, res) => sendPage(res, "app.html"));
 
 // Only the stylesheet and scripts are public. The HTML pages are served by the
 // routes above so they always pass through the sign-in check first.
